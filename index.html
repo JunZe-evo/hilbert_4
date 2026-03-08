@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>希尔伯特的学习方法 — 分析与实践</title>
+
+<!-- CDN 版：适合直接部署到 GitHub Pages -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<style>
+  :root{
+    --bg:#FBF6EA;
+    --ink:#222;
+    --accent:#0B3D91;
+    --muted:#6B6B6B;
+    --panel:#FFFFFF;
+    --green:#769B8B;
+    --maxw:1120px;
+    --shadow:0 6px 18px rgba(0,0,0,0.04);
+  }
+  *{box-sizing:border-box}
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Palatino Linotype", Georgia, "Microsoft YaHei", serif;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:var(--maxw);margin:20px auto;padding:20px}
+  header{display:flex;gap:18px;align-items:flex-start}
+  .hero{flex:1;min-width:0}
+  h1{color:var(--accent);font-size:1.8rem;margin:0 0 6px;line-height:1.28}
+  p.lead{margin:0;color:var(--muted)}
+
+  .portrait{
+    width:180px;flex:0 0 180px;border-radius:10px;overflow:hidden;
+    box-shadow:0 6px 18px rgba(11,61,145,0.08);background:#fff;
+  }
+  .portrait img{width:100%;height:auto;display:block;object-fit:cover}
+
+  .netbar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .netbadge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 10px;border-radius:999px;
+    border:1px solid #e4ecff;background:#f1f6ff;color:#0B3D91;
+    font-size:.86rem;
+  }
+  .netbadge.offline{border-color:#f0d9c7;background:#fff7ef;color:#7a3f1f}
+  .netbadge.secondary{opacity:.9}
+
+  main{
+    margin-top:18px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 390px;
+    gap:18px;
+    align-items:start;
+  }
+  article{
+    min-width:0;
+    background:var(--panel);
+    padding:18px;
+    border-radius:12px;
+    box-shadow:var(--shadow);
+  }
+  aside{position:sticky;top:18px;height:fit-content;min-width:0}
+
+  .side-card{
+    padding:16px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfbfb);
+    box-shadow:0 6px 18px rgba(0,0,0,0.03);
+    border:1px solid #f0f0f0;margin-bottom:14px;
+  }
+  .side-title{
+    margin:0;color:var(--accent);font-size:1.2rem;
+    border-bottom:2px solid var(--green);padding-bottom:8px;
+  }
+  .keylist{display:flex;flex-direction:column;gap:10px;margin:12px 0 0}
+  .chip{
+    background:#f1f6ff;border-left:4px solid var(--accent);
+    padding:10px 12px;border-radius:10px;font-size:0.95rem;
+  }
+  .gloss{color:var(--accent);border-bottom:1px dotted var(--accent);cursor:help;position:relative}
+
+  .tool-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .tool-btn{
+    display:inline-flex;align-items:center;justify-content:space-between;gap:10px;
+    width:100%;padding:11px 14px;border-radius:16px;border:0;
+    background:linear-gradient(180deg,#0b3d91,#1553b8);color:#fff;
+    box-shadow:0 10px 26px rgba(11,61,145,0.14);
+    cursor:pointer;font-size:0.98rem;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .tool-btn:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(11,61,145,0.18)}
+  .tool-btn:active{transform:scale(.99)}
+  .tool-btn.small{
+    width:auto;
+    padding:8px 10px;font-size:0.9rem;border-radius:12px;
+    background:linear-gradient(180deg,#fff,#f0f4ff);color:var(--accent);
+    box-shadow:none;border:1px solid #e4ecff;text-align:left;
+  }
+
+  .tool-panel{
+    margin-top:12px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;
+    box-shadow:0 6px 16px rgba(0,0,0,0.04);
+    overflow:hidden;
+  }
+  .tool-section{display:none}
+  .tool-section.active{display:block}
+
+  h2{color:var(--accent);margin-top:0;border-bottom:2px solid var(--green);padding-bottom:6px}
+  .chip-inline{background:#f1f6ff;border-left:4px solid var(--accent);padding:8px 10px;border-radius:10px;font-size:0.95rem}
+  .method{margin:12px 0;padding:12px;border-radius:10px;border:1px dashed #eee;background:#fff}
+  .method h3{margin:0 0 6px;color:var(--accent);font-size:1.05rem}
+  .notes{color:var(--muted);font-size:0.95rem}
+  .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--accent);user-select:none}
+  details{margin-top:12px}
+  pre.transcript{
+    white-space:pre-wrap;word-break:break-word;background:#f9f6ef;padding:12px;border-radius:10px;
+    border-left:3px solid var(--green);font-family:inherit;line-height:1.55
+  }
+  .practice-list{list-style:decimal;margin-left:20px;padding-right:6px}
+
+  input[type="text"], input[type="date"], input[type="number"], textarea, select{
+    width:100%;max-width:100%;padding:10px;border-radius:12px;border:1px solid #e5e7eb;font-family:inherit;
+  }
+  textarea{min-height:72px;resize:vertical}
+  .row{display:flex;gap:8px;min-width:0}
+  .row .col{flex:1;min-width:0}
+  .muted{color:var(--muted);font-size:0.92rem}
+  .small{font-size:0.88rem;color:var(--muted)}
+
+  .chart-wrap{
+    width:100%;height:220px;max-height:220px;border-radius:12px;background:#fff;border:1px solid #eee;
+    padding:6px;overflow:hidden;
+  }
+  .chart-wrap canvas{width:100% !important;height:100% !important;display:block}
+
+  #mindmapContainer{height:360px;border-radius:12px;border:1px solid #eee;background:#fff;overflow:hidden}
+  .progress{height:10px;background:#f1f1f1;border-radius:999px;overflow:hidden}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,#0b3d91,#2a6ad6);transition:width .4s ease}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;
+    background:#f1f6ff;border:1px solid #e4ecff;color:var(--accent);font-size:0.88rem;
+  }
+  .box{background:#fbfbff;border:1px solid #e4ecff;border-radius:12px;padding:10px}
+  .bigtime{font-size:1.8rem;font-weight:700;color:var(--accent);letter-spacing:1px}
+  .warn{
+    margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid #f0d9c7;
+    background:#fff7ef;color:#7a3f1f;font-size:0.9rem;
+  }
+
+  .ctx-menu{
+    position:fixed;min-width:220px;background:#fff;border:1px solid #eee;border-radius:12px;
+    box-shadow:0 18px 60px rgba(0,0,0,0.14);padding:8px;z-index:9999;display:none;
+  }
+  .ctx-menu .item{
+    padding:9px 10px;border-radius:10px;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:0.93rem;
+  }
+  .ctx-menu .item:hover{background:#f5f7ff}
+  .ctx-menu .sep{height:1px;background:#f0f0f0;margin:6px 4px}
+  .ctx-menu .hint{font-size:0.82rem;color:#777;padding:6px 10px}
+
+  .plist{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .pitem{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:8px 10px;border-radius:10px;border:1px solid #eee;background:#fff;
+  }
+  .pitem b{font-weight:700;color:#0b3d91}
+  .pitem .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .btn-mini{
+    padding:6px 8px;border-radius:10px;border:1px solid #e4ecff;background:#f0f4ff;color:#0b3d91;
+    cursor:pointer;font-size:0.88rem;
+  }
+  .btn-mini.danger{border-color:#f0d9c7;background:#fff7ef;color:#7a3f1f}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 6px;border-bottom:1px solid #eee;text-align:left;vertical-align:top;word-break:break-word}
+
+  @media (max-width:980px){
+    .wrap{margin:0 auto;padding:14px}
+    header{align-items:flex-start;gap:12px}
+    .portrait{width:96px;flex:0 0 96px;border-radius:14px}
+    h1{font-size:1.35rem}
+    main{grid-template-columns:1fr}
+    aside{position:relative;top:auto}
+    #mindmapContainer{height:420px}
+    .chart-wrap{height:240px;max-height:240px}
+    .row{flex-direction:column}
+  }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="hero">
+        <h1>希尔伯特的学习方法：可执行策略</h1>
+        <p class="lead">希尔伯特的学习方法论实践结合（含学习记录 / 统计 / 思维导图）</p>
+
+        <div class="netbar">
+          <span id="netBadge" class="netbadge">检测中…</span>
+          <span id="libBadge" class="netbadge secondary">资源：检测中…</span>
+        </div>
+      </div>
+
+      <figure class="portrait" title="希尔伯特肖像">
+        <img id="hilbertPortrait"
+             src="assets/hilbert.jpg"
+             data-fallback="https://upload.wikimedia.org/wikipedia/commons/6/6e/David_Hilbert%2C_1907.jpg"
+             alt="David Hilbert"
+             onerror="this.onerror=null; this.src=this.dataset.fallback;">
+      </figure>
+    </header>
+
+    <main>
+      <article>
+        <h2>总体框架（为什么他的方式有效）</h2>
+        <div class="chip-inline">核心：问题驱动 → 公理化 → 教与研并重 → 长期题库</div>
+        <p class="notes">方法归纳为 <strong>8 个可操作原则</strong>（适用于综合学科），并配套练习与检验标准。</p>
+
+        <section class="method"><h3>1. 把问题写清楚（问题驱动）</h3><p>一句话写问题 + 已知 / 未知 / 限制条件。</p><p class="notes">检验：5 行内写出本质并给出两个子问题。</p></section>
+        <section class="method"><h3>2. 建体系（公理化／抽象化）</h3><p>抽象“最小假设 + 基本定义”，追溯结论依赖。</p></section>
+        <section class="method"><h3>3. 阅读并重写（不满足“会读”）</h3><p>把论证重写成可复述的结构（两种结构更佳）。</p></section>
+        <section class="method"><h3>4. 教学即学习（讲给别人听）</h3><p>20 分钟讲稿 / 录音 / 讲义，讲结构不讲堆砌。</p></section>
+        <section class="method"><h3>5. 个人题库（长期题目仓）</h3><p>分级（可解 / 待研究 / 开放），周期回看。</p></section>
+        <section class="method"><h3>6. 批判性讨论</h3><p>质疑关键假设，尝试反例 / 替代方案。</p></section>
+        <section class="method"><h3>7. 存在性 vs 构造性</h3><p>写清类型，对存在性尝试构造化。</p></section>
+        <section class="method"><h3>8. 跨域迁移</h3><p>把工具迁移到新领域小问题里验证。</p></section>
+
+        <h2>实践清单</h2>
+        <ol class="practice-list">
+          <li><strong>边界明确：</strong>一句话 + 已知 / 未知 / 限制。</li>
+          <li><strong>抽象公理化：</strong>最小定义 + 基本假设 + 必要性检验。</li>
+          <li><strong>重写结构：</strong>定义—中间结论—主结论—主线。</li>
+          <li><strong>教学输出：</strong>20 分钟讲稿 / 录音 / 讲义。</li>
+          <li><strong>长期题库：</strong>分级 + 周期回看。</li>
+          <li><strong>批判讨论：</strong>反例 / 替代假设。</li>
+          <li><strong>存在 vs 构造：</strong>类型标注 + 构造化尝试。</li>
+          <li><strong>跨域迁移：</strong>工具搬迁 + 小问题验证。</li>
+        </ol>
+
+        <h2>希尔伯特日记（每周复盘）</h2>
+        <details>
+          <summary class="toggle">打开 / 关闭：周复盘模板</summary>
+          <div style="margin-top:12px">
+            <pre class="transcript">周复盘模版（每周一次，建议周末）
+1) 本周目标
+2) 完成情况
+3) 核心收获
+4) 遇到的疑难
+5) 假设与公理检查
+6) 下周行动
+7) 心得与反思</pre>
+
+            <textarea id="weekJournal" placeholder="在这里写你的本周复盘..." style="width:100%;height:150px"></textarea>
+
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="saveJournal()">保存周记</button>
+              <button onclick="showJournal()">查看历史周记</button>
+              <button onclick="clearJournalBox()">清空输入</button>
+            </div>
+
+            <div id="journalList" style="margin-top:10px"></div>
+          </div>
+        </details>
+
+        <footer style="margin-top:16px">
+          <small class="notes">说明：数据保存在本地浏览器。建议定期 Ctrl+S 导出备份。</small>
+        </footer>
+      </article>
+
+      <aside>
+        <div class="side-card">
+          <h2 class="side-title">交互工具</h2>
+          <div class="keylist">
+            <div class="chip">可点开词汇：<span class="gloss" data-def="一组关于对象的初始假设与定义，目的是建立推理体系。">公理化</span></div>
+            <div class="chip">练习模板：写 20 分钟讲稿 → 录音 → 反思</div>
+            <div class="chip">长期题库：把你想攻的 5 个问题放到「实践清单」或「思维导图」里</div>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h2 class="side-title">快速工具</h2>
+          <div class="tool-list" role="toolbar" aria-label="快速工具列表">
+            <button class="tool-btn" onclick="openTool('study')"><span>学习事件记录</span><span>⏱️</span></button>
+            <button class="tool-btn" onclick="openTool('timer')"><span>正/逆向计时器</span><span>⏳</span></button>
+            <button class="tool-btn" onclick="openTool('chart')"><span>学习曲线</span><span>📈</span></button>
+            <button class="tool-btn" onclick="openTool('stats')"><span>成长统计（双轴图）</span><span>📊</span></button>
+            <button class="tool-btn" onclick="openTool('mindmap')"><span>知识结构卡片（增强）</span><span>🌳</span></button>
+            <button class="tool-btn" onclick="openTool('hilbert')"><span>Hilbert 思维训练</span><span>🧠</span></button>
+            <button class="tool-btn" onclick="openTool('plan')"><span>实践清单</span><span>🗂️</span></button>
+          </div>
+
+          <div class="tool-panel" aria-live="polite">
+            <div id="tool-study" class="tool-section">
+              <div class="small">学习事件（session）：日期、分钟、项目、类型、备注。先新建自定义项目，再按项目 + 事件类型记录。</div>
+
+              <div class="row" style="margin-top:8px">
+                <div class="col"><input id="entryDate" type="date"></div>
+                <div class="col"><input id="entryMinutes" type="number" placeholder="分钟"></div>
+              </div>
+
+              <div class="row" style="margin-top:8px">
+                <div class="col">
+                  <select id="entryProject"></select>
+                  <div class="small" style="margin-top:6px">项目：用于按科目 / 模块统计。</div>
+                </div>
+                <div class="col">
+                  <select id="entryType">
+                    <option value="study">学习</option>
+                    <option value="review">复盘</option>
+                    <option value="exercise">练习</option>
+                    <option value="reading">阅读</option>
+                    <option value="writing">写作</option>
+                  </select>
+                  <div class="small" style="margin-top:6px">事件类型。</div>
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:8px">
+                <div class="col"><input id="newProjectName" type="text" placeholder="新建项目名（例如：高数 / 英语 / CS / 心理学）"></div>
+                <div class="col"><button onclick="addProjectFromInput()" style="width:100%">新建项目</button></div>
+              </div>
+
+              <input id="entryNote" type="text" placeholder="备注（可选）" style="margin-top:8px">
+
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+                <button onclick="addEntry()">添加学习事件</button>
+                <button class="tool-btn small" onclick="exportAll()">导出备份</button>
+                <button class="tool-btn small" onclick="importAll()">导入备份</button>
+                <button class="tool-btn small" onclick="clearAllData()">清空全部数据</button>
+                <span class="pill" id="activeProjectPill">当前项目：-</span>
+              </div>
+
+              <details style="margin-top:10px">
+                <summary class="small">项目管理（重命名 / 删除）</summary>
+                <div id="projectManageList" class="plist"></div>
+                <div class="small" style="margin-top:6px">提示：不再提供默认项目；请使用你自己新建的项目。</div>
+              </details>
+
+              <details style="margin-top:10px">
+                <summary class="small">学习事件记录（筛选 / 编辑）</summary>
+
+                <div class="row" style="margin-top:8px">
+                  <div class="col">
+                    <select id="filterProject" onchange="renderEntries()"></select>
+                    <div class="small" style="margin-top:6px">筛选项目。</div>
+                  </div>
+                  <div class="col">
+                    <select id="filterType" onchange="renderEntries()">
+                      <option value="all">全部类型</option>
+                      <option value="study">学习</option>
+                      <option value="review">复盘</option>
+                      <option value="exercise">练习</option>
+                      <option value="reading">阅读</option>
+                      <option value="writing">写作</option>
+                    </select>
+                    <div class="small" style="margin-top:6px">筛选类型。</div>
+                  </div>
+                </div>
+
+                <table style="margin-top:8px">
+                  <thead>
+                    <tr style="color:#666">
+                      <th>日期</th><th>分钟</th><th>项目</th><th>类型</th><th>备注</th><th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="entriesTbody"></tbody>
+                </table>
+              </details>
+
+              <details style="margin-top:10px">
+                <summary class="small">编辑选中事件（先点“编辑”按钮）</summary>
+                <div class="box" style="margin-top:8px">
+                  <div class="row">
+                    <div class="col"><div class="muted">日期</div><input id="editDate" type="date"></div>
+                    <div class="col"><div class="muted">分钟</div><input id="editMinutes" type="number"></div>
+                  </div>
+                  <div class="row" style="margin-top:8px">
+                    <div class="col"><div class="muted">项目</div><select id="editProject"></select></div>
+                    <div class="col"><div class="muted">类型</div><select id="editType">
+                      <option value="study">学习</option>
+                      <option value="review">复盘</option>
+                      <option value="exercise">练习</option>
+                      <option value="reading">阅读</option>
+                      <option value="writing">写作</option>
+                    </select></div>
+                  </div>
+                  <div style="margin-top:8px">
+                    <div class="muted">备注</div>
+                    <input id="editNote" type="text">
+                  </div>
+                  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                    <button onclick="saveEditEntry()">保存修改</button>
+                    <button onclick="cancelEditEntry()">取消</button>
+                    <span class="small" id="editHint">未选择事件</span>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div id="tool-timer" class="tool-section">
+              <div class="small">正向 / 逆向计时。停止后可写入学习事件。</div>
+              <div style="margin-top:10px" class="box">
+                <div class="row">
+                  <div class="col"><div class="muted">项目</div><select id="timerProject"></select></div>
+                  <div class="col">
+                    <div class="muted">类型</div>
+                    <select id="timerType">
+                      <option value="study">学习</option>
+                      <option value="review">复盘</option>
+                      <option value="exercise">练习</option>
+                      <option value="reading">阅读</option>
+                      <option value="writing">写作</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row" style="margin-top:10px;align-items:flex-end">
+                  <div class="col"><div class="muted">逆向计时（分钟）</div><input id="countdownMinutes" type="number" placeholder="例如 25"></div>
+                  <div class="col"><div class="muted">备注</div><input id="timerNote" type="text" placeholder="例如：线代习题 / 单词 / 代码调试"></div>
+                </div>
+
+                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button onclick="startStopwatch()">开始正向计时</button>
+                  <button onclick="pauseTimer()">暂停</button>
+                  <button onclick="resumeTimer()">继续</button>
+                  <button onclick="startCountdown()">开始逆向计时</button>
+                  <button onclick="stopAndSaveTimer()">停止并写入事件</button>
+                  <button onclick="resetTimer()">重置</button>
+                </div>
+
+                <div style="margin-top:10px">
+                  <div class="muted">当前模式：<b id="timerModeText">-</b></div>
+                  <div class="bigtime" id="timerDisplay">00:00:00</div>
+                  <div class="small">提示：停止并写入会折算分钟，生成一条学习事件。</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="tool-chart" class="tool-section">
+              <div class="small">最近 30 天学习分钟曲线（默认统计全部项目）。</div>
+              <div class="chart-wrap" style="margin-top:8px">
+                <canvas id="chartCanvas" height="220"></canvas>
+              </div>
+              <div id="chartWarn" class="warn" style="display:none">图表组件未加载。</div>
+              <div style="margin-top:8px" class="small">合计：<strong id="sumRecent">0</strong> 分钟 · 增长率：<strong id="growth">0%</strong></div>
+            </div>
+
+            <div id="tool-stats" class="tool-section">
+              <div class="small">模块 / 项目统计：柱状（分钟）+ 折线（事件数）。</div>
+
+              <div class="row" style="margin-top:10px">
+                <div class="col">
+                  <div class="muted">统计范围</div>
+                  <select id="statsScope" onchange="renderStatsAll()">
+                    <option value="all">总计</option>
+                    <option value="30">近30天</option>
+                  </select>
+                </div>
+                <div class="col">
+                  <div class="muted">目标（每日分钟）</div>
+                  <input id="dailyGoal" type="number" value="60" min="1" onchange="renderStatsAll()">
+                </div>
+              </div>
+
+              <div style="margin-top:10px">
+                <div class="muted">总学习时间（所有项目）</div>
+                <h3 id="totalAll">0 分钟</h3>
+                <div class="muted">平均每天（近30天）</div>
+                <h3 id="avgRecent">0 分钟</h3>
+              </div>
+
+              <div style="margin-top:10px">
+                <div class="muted">学习进度（近30天 / 目标）</div>
+                <div class="progress" style="margin-top:6px"><div id="progBar" class="progress-bar"></div></div>
+              </div>
+
+              <div class="small" style="margin-top:10px">模块坐标系（柱状 + 折线）</div>
+              <div class="chart-wrap" style="margin-top:8px">
+                <canvas id="statsChartCanvas" height="220"></canvas>
+              </div>
+              <div id="statsWarn" class="warn" style="display:none">Chart.js 未加载。</div>
+
+              <details style="margin-top:12px">
+                <summary class="small">项目统计表（展开）</summary>
+                <table style="margin-top:8px">
+                  <thead><tr style="color:#666"><th>项目</th><th>总分钟</th><th>事件数</th><th>近30天分钟</th></tr></thead>
+                  <tbody id="projectStatsTbody"></tbody>
+                </table>
+              </details>
+            </div>
+
+            <div id="tool-mindmap" class="tool-section">
+              <div class="small">右键菜单：新增 / 删除 / 编辑 / 连线 / 改样式 / 类型 / 折叠 / 布局。</div>
+              <div id="mindWarn" class="warn" style="display:none">vis-network 未加载。</div>
+
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <span class="pill" id="mmStatus">未选中</span>
+                <span class="pill" id="mmLinkModePill">连线模式：关</span>
+                <span class="pill" id="mmLayoutPill">布局：自由</span>
+              </div>
+
+              <div style="margin-top:10px" class="box">
+                <div class="row">
+                  <div class="col"><input id="mmLabelInput" type="text" placeholder="编辑标签：选中节点后在这里修改"></div>
+                  <div class="col" style="display:flex;gap:8px">
+                    <button onclick="mmApplyLabel()" style="flex:1">应用标签</button>
+                    <button onclick="mmAddStandalone()" class="tool-btn small" style="flex:1">+ 独立节点</button>
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button onclick="mmAddChild()">+ 子节点</button>
+                  <button onclick="mmAddSibling()">+ 兄弟节点</button>
+                  <button onclick="mmToggleCollapseSelected()">折叠/展开子树</button>
+                  <button onclick="mmExpandAll()">展开全部</button>
+                  <button class="tool-btn small" onclick="mmCenterView()">居中</button>
+                </div>
+
+
+
+                <div style="margin-top:8px" class="row">
+                  <div class="col">
+                    <label class="small">节点颜色（选中节点后）</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                      <input type="color" id="mmNodeColor" value="#0B3D91" style="width:52px;height:36px;padding:0;border:none;background:transparent">
+                      <button class="tool-btn small" onclick="mmApplyNodeColor()">应用节点颜色</button>
+                      <button class="tool-btn small" onclick="mmResetNodeColor()">恢复类型颜色</button>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <label class="small">连线颜色（选中连线后）</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                      <input type="color" id="mmEdgeColor" value="#0B3D91" style="width:52px;height:36px;padding:0;border:none;background:transparent">
+                      <button class="tool-btn small" onclick="mmApplyEdgeColor()">应用连线颜色</button>
+                      <button class="tool-btn small" onclick="mmResetEdgeColor()">恢复默认</button>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top:8px" class="row">
+                  <div class="col">
+                    <label class="small">新建边默认样式</label>
+                    <select id="mmEdgeStyleDefault" onchange="mmSetDefaultEdgeStyle()">
+                      <option value="straight">直线分支</option>
+                      <option value="curved">曲线分支</option>
+                    </select>
+                  </div>
+                  <div class="col">
+                    <label class="small">布局</label>
+                    <select id="mmLayoutSelect" onchange="mmApplyLayout(this.value)">
+                      <option value="free">自由布局</option>
+                      <option value="tree">树状布局</option>
+                      <option value="radial">径向布局</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button onclick="mmToggleLinkMode()">连线模式（点两节点连线）</button>
+                  <button onclick="mmEdgeToStraight()" class="tool-btn small">选中边→直线</button>
+                  <button onclick="mmEdgeToCurved()" class="tool-btn small">选中边→曲线</button>
+                  <button onclick="mmDeleteSelectedEdge()">删除连线</button>
+                  <button onclick="mmDeleteSelectedNode()">删除节点</button>
+                </div>
+              </div>
+
+              <div id="mindmapContainer" style="margin-top:10px"></div>
+
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                <button class="tool-btn small" onclick="exportMind()">导出思维图</button>
+                <button class="tool-btn small" onclick="importMind()">导入思维图</button>
+                <button class="tool-btn small" onclick="resetMind()">重置</button>
+              </div>
+            </div>
+
+            <div id="tool-hilbert" class="tool-section">
+              <div class="small">本地训练（模板 + 自动评估）。</div>
+              <div style="margin-top:8px" class="row">
+                <select id="aiMode" class="col">
+                  <option value="structure">结构化（抽象）</option>
+                  <option value="axiom">公理化（列假设）</option>
+                  <option value="reconstruct">重构论证</option>
+                </select>
+                <button onclick="genPrompt()">生成题目</button>
+              </div>
+              <div id="promptBox" class="small" style="margin-top:8px;background:#fbfbff;padding:8px;border-radius:10px;"></div>
+              <textarea id="aiAnswer" placeholder="写下你的答案 / 思路（作为训练）" style="margin-top:8px"></textarea>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button onclick="evalAnswer()">自动评估</button>
+                <button class="tool-btn small" onclick="hintAI()">提示</button>
+              </div>
+              <div id="aiFeedback" style="margin-top:8px" class="small"></div>
+            </div>
+
+            <div id="tool-plan" class="tool-section">
+              <div class="small">实践清单（可增删、勾选完成、写入学习事件）。</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <input id="planText" placeholder="任务说明">
+                <input id="planTime" placeholder="预计分钟" style="width:120px">
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                <button onclick="addPlan()">加入计划</button>
+                <button class="tool-btn small" onclick="exportAll()">导出所有数据</button>
+                <button class="tool-btn small" onclick="importAll()">导入备份</button>
+              </div>
+              <ul id="planList" style="margin-top:10px"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-card" style="margin-bottom:0">
+          <div class="small">提示：这个版本取消了默认项目，先新建项目，再结合事件类型记录。</div>
+        </div>
+      </aside>
+    </main>
+
+    <div id="mmCtxMenu" class="ctx-menu" role="menu" aria-hidden="true"></div>
+
+    <footer style="margin-top:14px">
+      &copy; 学习方法分析 · 图片来源：Wikimedia Commons
+    </footer>
+  </div>
+
+<script>
+const $ = (sel)=>document.querySelector(sel);
+
+function updateNetBadges(){
+  const net = document.getElementById('netBadge');
+  const lib = document.getElementById('libBadge');
+
+  const online = navigator.onLine;
+  if(net){
+    net.textContent = online ? '在线' : '离线';
+    net.classList.toggle('offline', !online);
+  }
+
+  const chartOK = (typeof Chart !== 'undefined');
+  const visOK = (typeof vis !== 'undefined');
+  if(lib){
+    lib.textContent = `资源：Chart ${chartOK?'✓':'×'} · Mindmap ${visOK?'✓':'×'}`;
+    lib.classList.toggle('offline', !(chartOK && visOK));
+  }
+}
+window.addEventListener('online', updateNetBadges);
+window.addEventListener('offline', updateNetBadges);
+setInterval(updateNetBadges, 1200);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) updateNetBadges(); });
+
+const KEY_ENTRIES = 'hilbert_entries_v2';
+const KEY_MIND = 'hilbert_mind_v4';
+const KEY_PLAN = 'hilbert_plan_v2';
+const KEY_JOURNAL = 'week_journal_v1';
+const KEY_PROJECTS = 'hilbert_projects_v2';
+
+document.querySelectorAll('.gloss').forEach(function(el){
+  const def = el.getAttribute('data-def') || '无释义';
+  el.addEventListener('mouseenter', function(){
+    const tip = document.createElement('div');
+    tip.style.position='absolute';
+    tip.style.background='white';
+    tip.style.border='1px solid #ddd';
+    tip.style.padding='8px';
+    tip.style.borderRadius='8px';
+    tip.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)';
+    tip.style.zIndex=150;
+    tip.innerText = def;
+    document.body.appendChild(tip);
+    const r = el.getBoundingClientRect();
+    tip.style.left = (r.left + window.scrollX) + 'px';
+    tip.style.top = (r.bottom + window.scrollY + 8) + 'px';
+    el._tip = tip;
+  });
+  el.addEventListener('mouseleave', function(){ if(el._tip){ el._tip.remove(); el._tip = null; } });
+  el.addEventListener('click', function(e){ e.preventDefault(); alert(def); });
+});
+
+function escapeHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openTool(id){
+  document.querySelectorAll('.tool-section').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById('tool-' + id);
+  if(el) el.classList.add('active');
+
+  if(id === 'chart') renderChart();
+  if(id === 'stats') renderStatsAll();
+  if(id === 'study') { renderEntries(); renderProjectManager(); }
+  if(id === 'plan') renderPlan();
+  if(id === 'timer') syncTimerProject();
+  if(id === 'mindmap') setTimeout(()=>{ if(window.network) window.network.fit(); }, 200);
+  if(id === 'hilbert'){
+    $('#promptBox').innerText='';
+    $('#aiFeedback').innerText='';
+    $('#aiAnswer').value='';
+  }
+}
+
+
+function loadProjects(){
+  const raw = localStorage.getItem(KEY_PROJECTS);
+  if(!raw){
+    const init = [];
+    localStorage.setItem(KEY_PROJECTS, JSON.stringify(init));
+    return init;
+  }
+  try{
+    const arr = JSON.parse(raw);
+    if(Array.isArray(arr)) return arr.filter(x=>String(x||'').trim() && x!=='默认项目');
+  }catch(e){}
+  localStorage.setItem(KEY_PROJECTS, JSON.stringify([]));
+  return [];
+}
+function saveProjects(arr){
+  const clean = Array.from(new Set((arr||[]).map(x=>String(x||'').trim()).filter(Boolean).filter(x=>x!=='默认项目')));
+  localStorage.setItem(KEY_PROJECTS, JSON.stringify(clean));
+}
+function hasProjects(){
+  return loadProjects().length > 0;
+}
+function addProject(name){
+  name = (name||'').trim();
+  if(!name) return false;
+  if(name === '默认项目') return alert('请使用自定义项目名');
+  const arr = loadProjects();
+  if(arr.includes(name)) return true;
+  arr.push(name);
+  saveProjects(arr);
+  refreshProjectSelectors(name);
+  renderProjectManager();
+  return true;
+}
+function addProjectFromInput(){
+  const name = ($('#newProjectName')?.value || '').trim();
+  if(!name) return alert('请输入项目名');
+  addProject(name);
+  $('#newProjectName').value = '';
+}
+
+function renameProject(oldName){
+  const newName = (prompt('重命名项目：', oldName) || '').trim();
+  if(!newName) return;
+  if(newName===oldName) return;
+  if(newName==='默认项目') return alert('请使用自定义项目名');
+  const arr = loadProjects();
+  if(arr.includes(newName)) return alert('已存在同名项目');
+
+  const idx = arr.indexOf(oldName);
+  if(idx>=0) arr[idx]=newName;
+  saveProjects(arr);
+
+  const entries = loadEntries().map(e => (e.project===oldName ? {...e, project:newName} : e));
+  saveEntries(entries);
+
+  refreshProjectSelectors(newName);
+  renderEntries(); renderStatsAll();
+  renderProjectManager();
+}
+
+function deleteProject(name){
+  if(!confirm(`确定删除项目「${name}」？`)) return;
+
+  const arr = loadProjects().filter(p=>p!==name);
+  saveProjects(arr);
+
+  const entries = loadEntries().filter(e => e.project!==name);
+  saveEntries(entries);
+
+  refreshProjectSelectors(arr[0] || '');
+  renderEntries(); renderStatsAll();
+  renderProjectManager();
+}
+
+function renderProjectManager(){
+  const box = $('#projectManageList');
+  if(!box) return;
+  const projects = loadProjects();
+  box.innerHTML='';
+  projects.forEach(p=>{
+    const safe = escapeHtml(p).replace(/'/g,"\\'");
+    const div=document.createElement('div');
+    div.className='pitem';
+    div.innerHTML = `
+      <div><b>${escapeHtml(p)}</b></div>
+      <div class="acts">
+        <button class="btn-mini" onclick="renameProject('${safe}')">重命名</button>
+        <button class="btn-mini danger" onclick="deleteProject('${safe}')">删除</button>
+      </div>`;
+    box.appendChild(div);
+  });
+}
+
+
+function refreshProjectSelectors(prefer){
+  const projects = loadProjects();
+  const entryProject = $('#entryProject');
+  const filterProject = $('#filterProject');
+  const timerProject = $('#timerProject');
+  const editProject = $('#editProject');
+
+  function fillSelect(sel, withAll){
+    if(!sel) return;
+    const current = prefer || sel.value || projects[0] || '';
+    sel.innerHTML = '';
+
+    if(withAll){
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = '全部项目';
+      sel.appendChild(optAll);
+    }else if(!projects.length){
+      const optEmpty = document.createElement('option');
+      optEmpty.value = '';
+      optEmpty.textContent = '请先新建项目';
+      sel.appendChild(optEmpty);
+    }
+
+    projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      sel.appendChild(opt);
+    });
+
+    if(withAll){
+      sel.value = (current === 'all' ? 'all' : (projects.includes(current)?current:'all'));
+    }else{
+      sel.value = projects.includes(current) ? current : (projects[0] || '');
+      sel.disabled = !projects.length;
+    }
+  }
+
+  fillSelect(entryProject, false);
+  fillSelect(timerProject, false);
+  fillSelect(filterProject, true);
+  fillSelect(editProject, false);
+  updateActiveProjectPill();
+}
+
+function updateActiveProjectPill(){
+  const p = $('#entryProject')?.value || '-';
+  const pill = $('#activeProjectPill');
+  if(pill) pill.textContent = '当前项目：' + (p || '未设置');
+}
+
+function loadEntries(){ return JSON.parse(localStorage.getItem(KEY_ENTRIES) || '[]'); }
+function saveEntries(arr){ localStorage.setItem(KEY_ENTRIES, JSON.stringify(arr)); }
+
+
+function migrateProjectData(){
+  const projects = loadProjects();
+  saveProjects(projects);
+  const cleanEntries = loadEntries().filter(e => (e.project||'').trim() && e.project !== '默认项目');
+  if(cleanEntries.length !== loadEntries().length){
+    saveEntries(cleanEntries);
+  }
+}
+
+function addEntry(){
+  const date = $('#entryDate').value || (new Date()).toISOString().slice(0,10);
+  const minutes = parseInt($('#entryMinutes').value || '0', 10);
+  const note = $('#entryNote').value || '';
+  const project = ($('#entryProject')?.value || '').trim();
+  const type = $('#entryType')?.value || 'study';
+  if(!project){ alert('请先新建项目，再添加学习事件'); return; }
+  if (!date || isNaN(minutes) || minutes<=0){ alert('请输入有效日期与分钟数'); return; }
+  const arr = loadEntries();
+  arr.push({date, minutes, note, project, type, created: Date.now()});
+  saveEntries(arr);
+  $('#entryMinutes').value=''; $('#entryNote').value='';
+  updateActiveProjectPill();
+  renderEntries(); renderChart(); renderStatsAll();
+}
+
+let editingEntryCreated = null;
+function startEditEntry(created){
+  const arr = loadEntries();
+  const e = arr.find(x=>x.created===created);
+  if(!e) return;
+  editingEntryCreated = created;
+  $('#editDate').value = e.date;
+  $('#editMinutes').value = e.minutes;
+  $('#editProject').value = e.project;
+  $('#editType').value = e.type;
+  $('#editNote').value = e.note || '';
+  $('#editHint').textContent = '正在编辑：' + e.date + ' / ' + e.project + ' / ' + e.minutes + ' 分钟';
+}
+function saveEditEntry(){
+  if(!editingEntryCreated) return alert('请先点击某条记录的“编辑”');
+  const date = $('#editDate').value;
+  const minutes = parseInt($('#editMinutes').value||'0',10);
+  const project = ($('#editProject').value || '').trim();
+  const type = $('#editType').value || 'study';
+  const note = $('#editNote').value || '';
+  if(!project) return alert('请先选择项目');
+  if(!date || isNaN(minutes) || minutes<=0) return alert('请输入有效日期与分钟');
+
+  const arr = loadEntries();
+  const idx = arr.findIndex(x=>x.created===editingEntryCreated);
+  if(idx<0) return alert('编辑对象已不存在');
+  arr[idx] = {...arr[idx], date, minutes, project, type, note};
+  saveEntries(arr);
+  alert('已保存修改');
+  cancelEditEntry();
+  renderEntries(); renderChart(); renderStatsAll();
+}
+function cancelEditEntry(){
+  editingEntryCreated = null;
+  $('#editHint').textContent = '未选择事件';
+  $('#editNote').value = '';
+}
+
+function renderEntries(){
+  const arr = loadEntries().slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const tbody = $('#entriesTbody');
+  if(!tbody) return;
+
+  const fp = $('#filterProject')?.value || 'all';
+  const ft = $('#filterType')?.value || 'all';
+
+  const filtered = arr.filter(e=>{
+    const okP = (fp==='all' ? true : (e.project===fp));
+    const okT = (ft==='all' ? true : (e.type===ft));
+    return okP && okT;
+  });
+
+  tbody.innerHTML = '';
+  filtered.slice(-120).reverse().forEach((e)=>{
+    const delBtn = `<button onclick="deleteEntryByCreated(${e.created})" style="border-radius:10px;padding:6px;background:#f5f5f5;border:1px solid #eee;cursor:pointer">删除</button>`;
+    const editBtn = `<button onclick="startEditEntry(${e.created})" style="border-radius:10px;padding:6px;background:#f0f4ff;border:1px solid #e4ecff;cursor:pointer;color:#0B3D91">编辑</button>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${e.date}</td>
+       <td>${Number(e.minutes||0)}</td>
+       <td>${escapeHtml(e.project||'')}</td>
+       <td>${escapeHtml(e.type||'')}</td>
+       <td>${escapeHtml(e.note||'')}</td>
+       <td style="display:flex;gap:6px;flex-wrap:wrap">${editBtn}${delBtn}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function deleteEntryByCreated(created){
+  const arr = loadEntries();
+  const idx = arr.findIndex(x=>x.created===created);
+  if(idx<0) return;
+  if(!confirm('确定删除这条学习事件？')) return;
+  arr.splice(idx,1);
+  saveEntries(arr);
+  if(editingEntryCreated===created) cancelEditEntry();
+  renderEntries(); renderChart(); renderStatsAll();
+}
+
+let chart30 = null;
+let chartStats = null;
+const WINDOW_DAYS = 30;
+function safeDestroyChart(ch){ try{ if(ch) ch.destroy(); }catch(e){} return null; }
+
+function getRecentData(project='all'){
+  const entries = loadEntries();
+  const days = [];
+  for(let i=WINDOW_DAYS-1;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    const sum = entries
+      .filter(x=>x.date===key)
+      .filter(x=>project==='all' ? true : x.project===project)
+      .reduce((s,x)=>s + Number(x.minutes||0),0);
+    days.push({date:key, minutes: sum});
+  }
+  return days;
+}
+
+function renderChart(){
+  const warn = $('#chartWarn');
+  if(typeof Chart === 'undefined'){
+    if(warn) warn.style.display = 'block';
+    const data = getRecentData('all');
+    const total = data.reduce((a,b)=>a+Number(b.minutes||0),0);
+    $('#sumRecent').innerText = total;
+    $('#growth').innerText = '0%';
+    return;
+  }
+  if(warn) warn.style.display = 'none';
+
+  const data = getRecentData('all');
+  const labels = data.map(d=>d.date.slice(5));
+  const values = data.map(d=>d.minutes);
+
+  const canvas = document.getElementById('chartCanvas');
+  if(!canvas) return;
+
+  chart30 = safeDestroyChart(chart30);
+  const ctx = canvas.getContext('2d');
+  chart30 = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{label:'分钟', data:values, borderColor:'#0B3D91', backgroundColor:'rgba(11,61,145,0.08)', fill:true, tension:0.25, pointRadius:2}] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:false,
+      plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, ticks:{precision:0}} }
+    }
+  });
+
+  const total = values.reduce((a,b)=>a+b,0);
+  $('#sumRecent').innerText = total;
+
+  const entries = loadEntries();
+  let prevTotal = 0;
+  for(let i=WINDOW_DAYS;i<WINDOW_DAYS*2;i++){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    prevTotal += entries.filter(x=>x.date===key).reduce((s,x)=>s+Number(x.minutes||0),0);
+  }
+  const growth = prevTotal===0 ? (total>0 ? 100 : 0) : Math.round(((total - prevTotal)/prevTotal)*100);
+  $('#growth').innerText = (growth>0? '+'+growth : growth) + '%';
+}
+
+function entriesInScope(scope){
+  const entries = loadEntries();
+  if(scope==='30'){
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 29);
+    const cutoffKey = cutoff.toISOString().slice(0,10);
+    return entries.filter(e=>e.date >= cutoffKey);
+  }
+  return entries;
+}
+
+function renderStatsAll(){
+  renderStatsText();
+  renderProjectStatsTable();
+  renderStatsChart();
+}
+
+function renderStatsText(){
+  const entries = loadEntries();
+  const totalAll = entries.reduce((s,e)=>s + Number(e.minutes||0),0);
+  $('#totalAll').innerText = totalAll + ' 分钟';
+
+  const data = getRecentData('all');
+  const totalWindow = data.reduce((a,b)=>a + Number(b.minutes||0),0);
+  const avg = Math.round((totalWindow / WINDOW_DAYS) || 0);
+  $('#avgRecent').innerText = avg + ' 分钟';
+
+  const goal = Math.max(1, parseInt($('#dailyGoal')?.value||'60',10));
+  const pct = Math.min(100, Math.round((totalWindow / (WINDOW_DAYS*goal)) * 100));
+  $('#progBar').style.width = pct + '%';
+}
+
+function renderProjectStatsTable(){
+  const tbody = $('#projectStatsTbody');
+  if(!tbody) return;
+
+  const entries = loadEntries();
+  const projects = loadProjects();
+  const last30SumForProject = (p)=>getRecentData(p).reduce((s,x)=>s+Number(x.minutes||0),0);
+
+  tbody.innerHTML = '';
+  projects.forEach(p=>{
+    const eP = entries.filter(x=>x.project===p);
+    const total = eP.reduce((s,x)=>s+Number(x.minutes||0),0);
+    const sessions = eP.length;
+    const last30 = last30SumForProject(p);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(p)}</td><td>${total}</td><td>${sessions}</td><td>${last30}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderStatsChart(){
+  const warn = $('#statsWarn');
+  if(typeof Chart === 'undefined'){
+    if(warn) warn.style.display='block';
+    chartStats = safeDestroyChart(chartStats);
+    return;
+  }
+  if(warn) warn.style.display='none';
+
+  const scope = $('#statsScope')?.value || 'all';
+  const scoped = entriesInScope(scope);
+  const projects = loadProjects();
+
+  const minutesBy = new Map(projects.map(p=>[p,0]));
+  const sessionsBy = new Map(projects.map(p=>[p,0]));
+
+  scoped.forEach(e=>{
+    const p = e.project || '未分类';
+    if(!minutesBy.has(p)){ minutesBy.set(p,0); sessionsBy.set(p,0); }
+    minutesBy.set(p, minutesBy.get(p) + Number(e.minutes||0));
+    sessionsBy.set(p, sessionsBy.get(p) + 1);
+  });
+
+  const labels = Array.from(minutesBy.keys());
+  const mins = labels.map(p=>minutesBy.get(p));
+  const sess = labels.map(p=>sessionsBy.get(p));
+
+  const canvas = document.getElementById('statsChartCanvas');
+  if(!canvas) return;
+
+  chartStats = safeDestroyChart(chartStats);
+  const ctx = canvas.getContext('2d');
+  chartStats = new Chart(ctx, {
+    data:{
+      labels,
+      datasets:[
+        {
+          type:'bar',
+          label:'学习分钟',
+          data:mins,
+          yAxisID:'y',
+          backgroundColor:'rgba(11,61,145,0.22)',
+          borderColor:'#0B3D91',
+          borderWidth:1
+        },
+        {
+          type:'line',
+          label:'事件数',
+          data:sess,
+          yAxisID:'y1',
+          borderColor:'#C46A00',
+          backgroundColor:'rgba(196,106,0,0.12)',
+          tension:0.25,
+          pointRadius:2,
+          fill:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:false,
+      plugins:{legend:{display:true}},
+      scales:{
+        y:{beginAtZero:true, position:'left', ticks:{precision:0}, title:{display:true, text:'分钟'}},
+        y1:{beginAtZero:true, position:'right', grid:{drawOnChartArea:false}, ticks:{precision:0}, title:{display:true, text:'事件数'}}
+      }
+    }
+  });
+}
+
+let timerState = { mode:'none', running:false, startedAt:null, elapsedMs:0, countdownTotalMs:0, countdownRemainMs:0, tickHandle:null };
+
+function syncTimerProject(){
+  const p = $('#entryProject')?.value || loadProjects()[0] || '';
+  if($('#timerProject')) $('#timerProject').value = p;
+}
+function formatMs(ms){
+  ms = Math.max(0, ms|0);
+  const sec = Math.floor(ms/1000);
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
+}
+function updateTimerUI(){
+  const modeText = $('#timerModeText');
+  const display = $('#timerDisplay');
+  if(modeText) modeText.textContent = timerState.mode === 'stopwatch' ? '正向计时' : timerState.mode === 'countdown' ? '逆向计时' : '-';
+  if(display){
+    if(timerState.mode === 'stopwatch') display.textContent = formatMs(timerState.elapsedMs);
+    else if(timerState.mode === 'countdown') display.textContent = formatMs(timerState.countdownRemainMs);
+    else display.textContent = '00:00:00';
+  }
+}
+function clearTick(){ if(timerState.tickHandle){ clearInterval(timerState.tickHandle); timerState.tickHandle=null; } }
+function startStopwatch(){
+  clearTick();
+  timerState.mode='stopwatch'; timerState.running=true; timerState.startedAt=Date.now(); timerState.elapsedMs=0;
+  timerState.tickHandle=setInterval(()=>{ if(!timerState.running) return; timerState.elapsedMs=Date.now()-timerState.startedAt; updateTimerUI(); },200);
+  updateTimerUI();
+}
+function startCountdown(){
+  const mins=parseInt($('#countdownMinutes')?.value||'0',10);
+  if(isNaN(mins)||mins<=0) return alert('请输入有效的逆向计时分钟数（例如 25）');
+  clearTick();
+  timerState.mode='countdown'; timerState.running=true; timerState.startedAt=Date.now();
+  timerState.countdownTotalMs=mins*60*1000; timerState.countdownRemainMs=timerState.countdownTotalMs;
+  timerState.tickHandle=setInterval(()=>{
+    if(!timerState.running) return;
+    const passed=Date.now()-timerState.startedAt;
+    timerState.countdownRemainMs=Math.max(0, timerState.countdownTotalMs-passed);
+    updateTimerUI();
+    if(timerState.countdownRemainMs<=0){
+      timerState.running=false; clearTick();
+      try{ new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgLsAAAB3AQACABAAZGF0YQAAAAA=').play(); }catch(e){}
+      alert('倒计时结束！你可以点击「停止并写入事件」把这段时间记入学习记录。');
+    }
+  },200);
+  updateTimerUI();
+}
+function pauseTimer(){
+  if(timerState.mode==='none'||!timerState.running) return;
+  timerState.running=false;
+  if(timerState.mode==='stopwatch') timerState.elapsedMs=Date.now()-timerState.startedAt;
+  else{
+    const passed=Date.now()-timerState.startedAt;
+    timerState.countdownRemainMs=Math.max(0, timerState.countdownTotalMs-passed);
+  }
+  updateTimerUI();
+}
+function resumeTimer(){
+  if(timerState.mode==='none'||timerState.running) return;
+  timerState.running=true;
+  if(timerState.mode==='stopwatch'){
+    timerState.startedAt=Date.now()-timerState.elapsedMs;
+    clearTick();
+    timerState.tickHandle=setInterval(()=>{ if(!timerState.running) return; timerState.elapsedMs=Date.now()-timerState.startedAt; updateTimerUI(); },200);
+  }else{
+    const used=timerState.countdownTotalMs-timerState.countdownRemainMs;
+    timerState.startedAt=Date.now()-used;
+    clearTick();
+    timerState.tickHandle=setInterval(()=>{
+      if(!timerState.running) return;
+      const passed=Date.now()-timerState.startedAt;
+      timerState.countdownRemainMs=Math.max(0, timerState.countdownTotalMs-passed);
+      updateTimerUI();
+      if(timerState.countdownRemainMs<=0){
+        timerState.running=false; clearTick();
+        try{ new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgLsAAAB3AQACABAAZGF0YQAAAAA=').play(); }catch(e){}
+        alert('倒计时结束！你可以点击「停止并写入事件」把这段时间记入学习记录。');
+      }
+    },200);
+  }
+  updateTimerUI();
+}
+function resetTimer(){ clearTick(); timerState={mode:'none',running:false,startedAt:null,elapsedMs:0,countdownTotalMs:0,countdownRemainMs:0,tickHandle:null}; updateTimerUI(); }
+function stopAndSaveTimer(){
+  if(timerState.mode==='none') return alert('当前没有正在计时的任务');
+  if(timerState.running) pauseTimer();
+  let minutes=0;
+  if(timerState.mode==='stopwatch') minutes=Math.max(1, Math.round(timerState.elapsedMs/60000));
+  else{
+    const used=timerState.countdownTotalMs-timerState.countdownRemainMs;
+    minutes=Math.max(1, Math.round(used/60000));
+  }
+  const project = ($('#timerProject')?.value || '').trim();
+  const type=$('#timerType')?.value||'study';
+  if(!project) return alert('请先新建项目，再使用计时器写入事件');
+  const note=($('#timerNote')?.value||'').trim() || ('计时器记录（'+(timerState.mode==='stopwatch'?'正向':'逆向')+'）');
+  const date=(new Date()).toISOString().slice(0,10);
+  const arr=loadEntries();
+  arr.push({date, minutes, note, project, type, created: Date.now()});
+  saveEntries(arr);
+  renderEntries(); renderChart(); renderStatsAll();
+  alert(`已写入学习事件：${project} / ${type} / ${minutes} 分钟`);
+}
+
+function loadJournal(){ return JSON.parse(localStorage.getItem(KEY_JOURNAL)||'[]'); }
+function saveJournalList(arr){ localStorage.setItem(KEY_JOURNAL, JSON.stringify(arr)); }
+function clearJournalBox(){ const box=$('#weekJournal'); if(box) box.value=''; }
+function saveJournal(){
+  const text = ($('#weekJournal')?.value || '').trim();
+  if(!text) return alert('周记不能为空');
+  const data = loadJournal();
+  const now = new Date();
+  data.push({id:Date.now(), dateISO:now.toISOString(), dateText:now.toLocaleDateString(), content:text});
+  saveJournalList(data);
+  alert('周记已保存');
+  clearJournalBox();
+  showJournal();
+}
+function showJournal(){
+  const data=loadJournal();
+  const box=$('#journalList'); if(!box) return;
+  box.innerHTML='';
+  if(!data.length){ box.innerHTML='<div class="small">暂无历史周记。</div>'; return; }
+  data.slice().reverse().forEach((j,revIndex)=>{
+    const div=document.createElement('div');
+    div.style.marginTop='10px'; div.style.padding='10px'; div.style.background='#f5f5f5'; div.style.borderRadius='10px';
+    div.innerHTML=`<b>${escapeHtml(j.dateText||'')}</b>
+      <div style="margin-top:6px;white-space:pre-wrap">${escapeHtml(j.content||'')}</div>
+      <div style="margin-top:8px"><button onclick="deleteJournalByReverseIndex(${revIndex})">删除</button></div>`;
+    box.appendChild(div);
+  });
+}
+function deleteJournalByReverseIndex(revIndex){
+  if(!confirm('确定删除这条周记？')) return;
+  const data=loadJournal();
+  const idx=data.length-1-revIndex;
+  if(idx<0||idx>=data.length) return;
+  data.splice(idx,1);
+  saveJournalList(data);
+  showJournal();
+}
+
+function loadPlan(){ return JSON.parse(localStorage.getItem(KEY_PLAN) || '[]'); }
+function savePlan(arr){ localStorage.setItem(KEY_PLAN, JSON.stringify(arr)); }
+function addPlan(){
+  const txt=($('#planText')?.value||'').trim();
+  const t=parseInt($('#planTime')?.value||'0',10);
+  if(!txt) return alert('请输入任务');
+  const arr=loadPlan();
+  arr.push({id:Date.now(), text:txt, time:isNaN(t)?0:t, done:false, created:Date.now()});
+  savePlan(arr);
+  $('#planText').value=''; $('#planTime').value='';
+  renderPlan();
+}
+function togglePlanDone(id){
+  const arr=loadPlan();
+  const idx=arr.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  arr[idx].done = !arr[idx].done;
+  savePlan(arr);
+  renderPlan();
+}
+function writePlanToEntry(id){
+  const arr=loadPlan();
+  const p=arr.find(x=>x.id===id);
+  if(!p) return;
+  const minutes = Math.max(1, Number(p.time||0) || 1);
+  const date = (new Date()).toISOString().slice(0,10);
+  const project = ($('#entryProject')?.value || '').trim();
+  const type = 'exercise';
+  if(!project) return alert('请先新建项目，再把计划写入事件');
+  const note = '计划完成：' + p.text;
+  const entries = loadEntries();
+  entries.push({date, minutes, note, project, type, created:Date.now()});
+  saveEntries(entries);
+  p.done = true;
+  savePlan(arr);
+  renderPlan();
+  renderEntries(); renderChart(); renderStatsAll();
+  alert('已写入学习事件（来自计划）：' + minutes + ' 分钟');
+}
+function delPlan(id){
+  const arr=loadPlan();
+  const idx=arr.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  arr.splice(idx,1);
+  savePlan(arr);
+  renderPlan();
+}
+function renderPlan(){
+  const arr=loadPlan();
+  const ul=$('#planList'); if(!ul) return;
+  ul.innerHTML='';
+  if(!arr.length){
+    ul.innerHTML = '<li class="small">暂无任务。</li>';
+    return;
+  }
+  arr.slice().sort((a,b)=>b.created-a.created).forEach((p)=>{
+    const li=document.createElement('li');
+    li.style.marginBottom='10px';
+    li.innerHTML=`
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="flex:1">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="checkbox" ${p.done?'checked':''} onclick="togglePlanDone(${p.id})" style="width:auto;margin:0">
+            <b style="${p.done?'text-decoration:line-through;opacity:.75':''}">${escapeHtml(p.text)}</b>
+            <span class="pill">预计 ${Number(p.time||0)} 分钟</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:110px">
+          <button class="tool-btn small" onclick="writePlanToEntry(${p.id})">写入事件</button>
+          <button class="tool-btn small" onclick="delPlan(${p.id})">删除</button>
+        </div>
+      </div>`;
+    ul.appendChild(li);
+  });
+}
+
+function exportAll(){
+  const data = {
+    projects: loadProjects(),
+    entries: loadEntries(),
+    mind: loadMind(),
+    plan: loadPlan(),
+    weekJournal: loadJournal(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='hilbert_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function importAll(){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='application/json';
+  inp.onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const obj=JSON.parse(r.result);
+        if(obj.projects && Array.isArray(obj.projects)) saveProjects(obj.projects);
+        if(obj.entries && Array.isArray(obj.entries)) localStorage.setItem(KEY_ENTRIES, JSON.stringify(obj.entries));
+        if(obj.weekJournal && Array.isArray(obj.weekJournal)) localStorage.setItem(KEY_JOURNAL, JSON.stringify(obj.weekJournal));
+        if(obj.plan && Array.isArray(obj.plan)) localStorage.setItem(KEY_PLAN, JSON.stringify(obj.plan));
+        if(obj.mind) localStorage.setItem(KEY_MIND, JSON.stringify(obj.mind));
+        alert('导入成功：已恢复数据');
+        refreshProjectSelectors();
+        renderEntries(); renderChart(); renderStatsAll();
+        renderPlan(); showJournal(); renderProjectManager();
+        if(confirm('思维导图数据已导入。是否刷新页面以完全重载思维导图？（推荐）')){
+          location.reload();
+        }
+      }catch(err){
+        alert('导入失败：文件格式不正确');
+      }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+function clearAllData(){
+  if(!confirm('确定清空全部数据？（项目 / 事件 / 周记 / 计划 / 思维导图）')) return;
+  localStorage.removeItem(KEY_PROJECTS);
+  localStorage.removeItem(KEY_ENTRIES);
+  localStorage.removeItem(KEY_JOURNAL);
+  localStorage.removeItem(KEY_PLAN);
+  localStorage.removeItem(KEY_MIND);
+  alert('已清空。页面将刷新。');
+  location.reload();
+}
+window.addEventListener('keydown',(e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
+    e.preventDefault();
+    exportAll();
+    alert('已导出数据（hilbert_backup.json）');
+  }
+});
+
+let mmSelectedNodeId=null, mmSelectedEdgeId=null;
+let mmLinkMode=false, mmLinkFrom=null;
+let mmDefaultEdgeStyle='straight';
+let mmLayoutMode='free';
+
+const MM_TYPES = {
+  concept:  {label:'概念',  color:{background:'#EAF2FF', border:'#0B3D91'}, font:{color:'#0B3D91'}},
+  theorem:  {label:'定理',  color:{background:'#FFF3E6', border:'#C46A00'}, font:{color:'#7A3F00'}},
+  example:  {label:'例子',  color:{background:'#E9FFF1', border:'#1E8E3E'}, font:{color:'#0B5D24'}},
+  question: {label:'问题',  color:{background:'#FFEAF0', border:'#B0004F'}, font:{color:'#7A0035'}},
+  note:     {label:'笔记',  color:{background:'#F2F1FF', border:'#5B45B2'}, font:{color:'#3B2A9A'}},
+  warning:  {label:'警示',  color:{background:'#FFF0F0', border:'#D0342C'}, font:{color:'#8B1D18'}}
+};
+
+const mmCtx = $('#mmCtxMenu');
+function mmSmoothByStyle(style){ return (style==='curved') ? {enabled:true,type:'cubicBezier'} : {enabled:false}; }
+function loadMind(){
+  const raw=localStorage.getItem(KEY_MIND);
+  if(!raw) return {nodes:[{id:1,label:'核心问题', type:'concept'}], edges:[], meta:{defaultEdgeStyle:'straight', layout:'free'}};
+  try { return JSON.parse(raw); }
+  catch(e){ return {nodes:[{id:1,label:'核心问题', type:'concept'}], edges:[], meta:{defaultEdgeStyle:'straight', layout:'free'}}; }
+}
+function saveMind(obj){ localStorage.setItem(KEY_MIND, JSON.stringify(obj)); }
+
+let nodes=null, edges=null, network=null;
+function persistMind(){
+  if(!nodes || !edges) return;
+  saveMind({ nodes: nodes.get(), edges: edges.get(), meta: { defaultEdgeStyle:mmDefaultEdgeStyle, layout:mmLayoutMode } });
+}
+
+function initMindmap(){
+  if(window.network && nodes && edges) return;
+  if(typeof vis === 'undefined'){
+    $('#mindWarn').style.display='block';
+    setTimeout(()=>{
+      if(typeof vis !== 'undefined' && !window.network) initMindmap();
+    }, 600);
+    return;
+  }
+  $('#mindWarn').style.display='none';
+  const mindInit = loadMind();
+  mmDefaultEdgeStyle = mindInit?.meta?.defaultEdgeStyle || 'straight';
+  mmLayoutMode = mindInit?.meta?.layout || 'free';
+
+  const initNodes = (mindInit.nodes||[{id:1,label:'核心问题', type:'concept'}]).map(n=>{
+    const t = MM_TYPES[n.type] ? n.type : 'concept';
+    n.type = t;
+    n.color = n.color || MM_TYPES[t].color;
+    n.font = n.font || MM_TYPES[t].font;
+    if(typeof n.collapsed === 'undefined') n.collapsed = false;
+    if(typeof n.hidden === 'undefined') n.hidden = false;
+    return n;
+  });
+  const initEdges = (mindInit.edges||[]).map(e=>{
+    if(typeof e.smooth==='undefined') e.smooth = mmSmoothByStyle(mmDefaultEdgeStyle);
+    if(typeof e.hidden==='undefined') e.hidden = false;
+    return e;
+  });
+
+  nodes = new vis.DataSet(initNodes);
+  edges = new vis.DataSet(initEdges);
+
+  network = new vis.Network($('#mindmapContainer'), {nodes, edges}, {
+    nodes:{shape:'box'},
+    edges:{arrows:'to', color:{color:'#0B3D91'}},
+    interaction:{multiselect:true, hover:true},
+    physics:{stabilization:false, barnesHut:{gravitationalConstant:-3000}}
+  });
+  window.network = network;
+
+  $('#mmEdgeStyleDefault').value = mmDefaultEdgeStyle;
+  $('#mmLayoutSelect').value = mmLayoutMode;
+  mmUpdatePills();
+  mmApplyLayout(mmLayoutMode, true);
+
+  network.on('select', (params)=>{
+    mmSelectedNodeId = (params.nodes && params.nodes.length) ? params.nodes[0] : null;
+    mmSelectedEdgeId = (params.edges && params.edges.length) ? params.edges[0] : null;
+    mmUpdatePills();
+  });
+  network.on('deselectNode', ()=>{ mmSelectedNodeId=null; mmUpdatePills(); });
+  network.on('deselectEdge', ()=>{ mmSelectedEdgeId=null; mmUpdatePills(); });
+
+  network.on('doubleClick', (params)=>{
+    if(params.nodes && params.nodes.length){
+      const id=params.nodes[0];
+      const n=nodes.get(id);
+      const newLabel = prompt('编辑标签：', n?.label || '');
+      if(newLabel!=null){
+        nodes.update({id, label:newLabel.trim()||'(未命名)'});
+        persistMind();
+        mmUpdatePills();
+      }
+    }
+  });
+
+  network.on('click', (params)=>{
+    if(!mmLinkMode) return;
+    if(!params.nodes || !params.nodes.length) return;
+    const id = params.nodes[0];
+    if(mmLinkFrom==null){
+      mmLinkFrom=id;
+      $('#mmStatus').textContent = `连线模式：已选起点 ${nodes.get(id)?.label||id}，请再点终点`;
+      return;
+    }
+    const from=mmLinkFrom, to=id;
+    mmLinkFrom=null;
+    if(from===to){ alert('起点和终点不能相同'); mmUpdatePills(); return; }
+    const exists = edges.get().some(e=>e.from===from && e.to===to);
+    if(exists){ alert('这条连线已存在'); mmUpdatePills(); return; }
+    edges.add({id:Date.now(), from, to, smooth:mmSmoothByStyle(mmDefaultEdgeStyle), hidden:false});
+    persistMind();
+    mmUpdatePills();
+  });
+
+  network.on('oncontext', (params)=>{
+    params.event.preventDefault();
+    const pointer = params.pointer.DOM;
+    const nodeId = network.getNodeAt(pointer);
+    const edgeId = network.getEdgeAt(pointer);
+
+    if(nodeId){
+      network.selectNodes([nodeId]);
+      mmSelectedNodeId=nodeId; mmSelectedEdgeId=null;
+      mmUpdatePills();
+      mmShowCtx(params.event.clientX, params.event.clientY, 'node');
+    }else if(edgeId){
+      network.selectEdges([edgeId]);
+      mmSelectedEdgeId=edgeId; mmSelectedNodeId=null;
+      mmUpdatePills();
+      mmShowCtx(params.event.clientX, params.event.clientY, 'edge');
+    }else{
+      mmShowCtx(params.event.clientX, params.event.clientY, 'blank');
+    }
+  });
+}
+
+function mmUpdatePills(){
+  $('#mmLinkModePill').textContent = '连线模式：' + (mmLinkMode ? '开' : '关');
+  $('#mmLayoutPill').textContent = '布局：' + (mmLayoutMode==='free'?'自由':mmLayoutMode==='tree'?'树状':'径向');
+  if(!nodes || !edges){
+    $('#mmStatus').textContent = '未加载';
+    return;
+  }
+  if(mmSelectedNodeId!=null){
+    const n=nodes.get(mmSelectedNodeId);
+    $('#mmStatus').textContent = `选中节点：${n?.label || mmSelectedNodeId}（${MM_TYPES[n?.type]?.label || '类型'}）`;
+    $('#mmLabelInput').value = n?.label || '';
+    try{ const bc=n?.color?.border || MM_TYPES[n?.type||'concept']?.color?.border || '#0B3D91'; $('#mmNodeColor').value=bc; }catch(e){}
+  }else if(mmSelectedEdgeId!=null){
+    const e=edges.get(mmSelectedEdgeId);
+    $('#mmStatus').textContent = `选中连线：${e?.from} → ${e?.to}`;
+    $('#mmLabelInput').value = '';
+    try{ const ec=(e?.color && (e.color.color||e.color)) || '#0B3D91'; $('#mmEdgeColor').value = (typeof ec==='string'?ec:'#0B3D91'); }catch(err){}
+  }else{
+    $('#mmStatus').textContent='未选中';
+    $('#mmLabelInput').value = '';
+  }
+}
+
+function mmSetDefaultEdgeStyle(){ mmDefaultEdgeStyle = $('#mmEdgeStyleDefault').value || 'straight'; persistMind(); }
+function mmToggleLinkMode(){ mmLinkMode = !mmLinkMode; mmLinkFrom=null; mmUpdatePills(); }
+function mmCenterView(){ if(network) network.fit({animation:{duration:250,easingFunction:'easeInOutQuad'}}); }
+function mmClearSelection(){ if(network) network.unselectAll(); mmSelectedNodeId=null; mmSelectedEdgeId=null; mmLinkFrom=null; mmUpdatePills(); }
+
+function mmClamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function mmHexToRgb(hex){
+  if(!hex) return {r:0,g:0,b:0};
+  let h=String(hex).trim();
+  if(h[0]==='#') h=h.slice(1);
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  const n=parseInt(h,16);
+  if(Number.isNaN(n)) return {r:0,g:0,b:0};
+  return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+}
+function mmRgbToHex(r,g,b){
+  const to=x=>mmClamp(x,0,255).toString(16).padStart(2,'0');
+  return '#'+to(r)+to(g)+to(b);
+}
+function mmMixHex(a,b,t){
+  const A=mmHexToRgb(a), B=mmHexToRgb(b);
+  const r=Math.round(A.r+(B.r-A.r)*t);
+  const g=Math.round(A.g+(B.g-A.g)*t);
+  const bl=Math.round(A.b+(B.b-A.b)*t);
+  return mmRgbToHex(r,g,bl);
+}
+function mmNodeColorsFromBorder(borderHex){
+  const border = borderHex || '#0B3D91';
+  // 用更浅的底色，保证可读性
+  const background = mmMixHex(border, '#ffffff', 0.88);
+  // 字体颜色：默认用边框色；如果太浅就用深色
+  const rgb=mmHexToRgb(border);
+  const lum=(0.2126*rgb.r + 0.7152*rgb.g + 0.0722*rgb.b)/255;
+  const font = (lum > 0.72) ? '#222222' : border;
+  return { background, border, font };
+}
+
+function mmApplyNodeColor(){
+  if(!nodes) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  const hex = ($('#mmNodeColor').value || '').trim() || '#0B3D91';
+  const c = mmNodeColorsFromBorder(hex);
+  nodes.update({id:mmSelectedNodeId, color:{background:c.background, border:c.border}, font:{color:c.font}});
+  persistMind();
+  mmUpdatePills();
+}
+function mmResetNodeColor(){
+  if(!nodes) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  const n=nodes.get(mmSelectedNodeId);
+  const t = MM_TYPES[n?.type]?.color ? n.type : 'concept';
+  nodes.update({id:mmSelectedNodeId, color:MM_TYPES[t].color, font:MM_TYPES[t].font});
+  persistMind();
+  mmUpdatePills();
+}
+function mmApplyEdgeColor(){
+  if(!edges) return alert('思维导图未加载');
+  if(mmSelectedEdgeId==null) return alert('请先选中连线');
+  const hex = ($('#mmEdgeColor').value || '').trim() || '#0B3D91';
+  edges.update({id:mmSelectedEdgeId, color:{color:hex}});
+  persistMind();
+  mmUpdatePills();
+}
+function mmResetEdgeColor(){
+  if(!edges) return alert('思维导图未加载');
+  if(mmSelectedEdgeId==null) return alert('请先选中连线');
+  edges.update({id:mmSelectedEdgeId, color:{color:'#0B3D91'}});
+  persistMind();
+  mmUpdatePills();
+}
+
+
+window.addEventListener('keydown',(e)=>{
+  if(e.key==='Delete' || e.key==='Backspace'){
+    const active=document.activeElement;
+    const tag=(active?.tagName||'').toLowerCase();
+    if(tag==='input' || tag==='textarea') return;
+    if(mmCtx.style.display==='block') mmHideCtx();
+    if(mmSelectedEdgeId!=null) mmDeleteSelectedEdge(false);
+    else if(mmSelectedNodeId!=null) mmDeleteSelectedNode(false);
+  }
+});
+
+function mmMakeNode(id,label,type){
+  const t = MM_TYPES[type] ? type : 'concept';
+  return {id,label,type:t,color:MM_TYPES[t].color,font:MM_TYPES[t].font,collapsed:false,hidden:false};
+}
+function mmAddStandalone(){
+  if(!nodes || !network) return alert('思维导图未加载');
+  const label = ($('#mmLabelInput').value || '').trim() || '新节点';
+  const id = Date.now();
+  nodes.add(mmMakeNode(id,label,'concept'));
+  persistMind();
+  network.selectNodes([id]);
+  mmSelectedNodeId=id; mmSelectedEdgeId=null;
+  mmUpdatePills();
+}
+function mmAddChild(){
+  if(!nodes || !edges || !network) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中一个节点');
+  const label = ($('#mmLabelInput').value || '').trim() || '子节点';
+  const id=Date.now();
+  nodes.add(mmMakeNode(id,label,'concept'));
+  edges.add({id:id+1, from:mmSelectedNodeId, to:id, smooth:mmSmoothByStyle(mmDefaultEdgeStyle), hidden:false});
+  persistMind();
+  network.selectNodes([id]);
+  mmSelectedNodeId=id; mmSelectedEdgeId=null;
+  mmUpdatePills();
+}
+function mmAddSibling(){
+  if(!nodes || !edges || !network) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中一个节点');
+  const incoming = edges.get().filter(e=>!e.hidden && e.to===mmSelectedNodeId);
+  const parent = incoming.length ? incoming[0].from : 1;
+  const label = ($('#mmLabelInput').value || '').trim() || '兄弟节点';
+  const id=Date.now();
+  nodes.add(mmMakeNode(id,label,'concept'));
+  edges.add({id:id+1, from:parent, to:id, smooth:mmSmoothByStyle(mmDefaultEdgeStyle), hidden:false});
+  persistMind();
+  network.selectNodes([id]);
+  mmSelectedNodeId=id; mmSelectedEdgeId=null;
+  mmUpdatePills();
+}
+function mmApplyLabel(){
+  if(!nodes) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  const label = ($('#mmLabelInput').value || '').trim() || '(未命名)';
+  nodes.update({id:mmSelectedNodeId,label});
+  persistMind();
+  mmUpdatePills();
+}
+function mmDeleteSelectedNode(needConfirm=true){
+  if(!nodes || !edges) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  if(mmSelectedNodeId===1) return alert('核心节点不建议删除（id=1）');
+  if(needConfirm && !confirm('确定删除该节点及其相关连线？')) return;
+  const rel = edges.get().filter(e=>e.from===mmSelectedNodeId || e.to===mmSelectedNodeId).map(e=>e.id);
+  edges.remove(rel);
+  nodes.remove(mmSelectedNodeId);
+  mmSelectedNodeId=null; mmSelectedEdgeId=null;
+  persistMind();
+  mmUpdatePills();
+}
+function mmDeleteSelectedEdge(needConfirm=true){
+  if(!edges) return alert('思维导图未加载');
+  if(mmSelectedEdgeId==null) return alert('请先选中连线');
+  if(needConfirm && !confirm('确定删除这条连线？')) return;
+  edges.remove(mmSelectedEdgeId);
+  mmSelectedEdgeId=null;
+  persistMind();
+  mmUpdatePills();
+}
+function mmEdgeToStraight(){ if(!edges) return; if(mmSelectedEdgeId==null) return alert('请先选中连线'); edges.update({id:mmSelectedEdgeId,smooth:mmSmoothByStyle('straight')}); persistMind(); }
+function mmEdgeToCurved(){ if(!edges) return; if(mmSelectedEdgeId==null) return alert('请先选中连线'); edges.update({id:mmSelectedEdgeId,smooth:mmSmoothByStyle('curved')}); persistMind(); }
+
+function mmCollectDescendants(rootId){
+  const visited=new Set([rootId]);
+  const stack=[rootId];
+  const out=new Set();
+  while(stack.length){
+    const cur=stack.pop();
+    edges.get().filter(e=>!e.hidden && e.from===cur).forEach(e=>{
+      const child=e.to;
+      if(!visited.has(child)){
+        visited.add(child);
+        out.add(child);
+        stack.push(child);
+      }
+    });
+  }
+  return Array.from(out);
+}
+function mmCollapseNode(id){
+  const n=nodes.get(id);
+  if(!n || n.collapsed) return;
+  const desc=mmCollectDescendants(id);
+  desc.forEach(did=>{ const dn=nodes.get(did); if(dn) nodes.update({id:did,hidden:true}); });
+  edges.get().forEach(e=>{
+    if(e.from===id && desc.includes(e.to)) edges.update({id:e.id,hidden:true});
+    else if(desc.includes(e.from) || desc.includes(e.to)) edges.update({id:e.id,hidden:true});
+  });
+  nodes.update({id,collapsed:true});
+  persistMind();
+}
+function mmExpandNode(id){
+  const n=nodes.get(id);
+  if(!n || !n.collapsed) return;
+  nodes.get().forEach(nn=>{ if(nn.hidden) nodes.update({id:nn.id,hidden:false}); });
+  edges.get().forEach(ee=>{ if(ee.hidden) edges.update({id:ee.id,hidden:false}); });
+  nodes.update({id,collapsed:false});
+  nodes.get().filter(x=>x.collapsed).map(x=>x.id).forEach(cid=>{ if(cid!==id) mmCollapseNode(cid); });
+  persistMind();
+}
+function mmToggleCollapseSelected(){
+  if(!nodes) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  const n=nodes.get(mmSelectedNodeId);
+  if(!n) return;
+  if(n.collapsed) mmExpandNode(mmSelectedNodeId); else mmCollapseNode(mmSelectedNodeId);
+  mmUpdatePills();
+}
+function mmExpandAll(){
+  if(!nodes || !edges) return;
+  nodes.get().forEach(n=>{
+    if(n.hidden) nodes.update({id:n.id,hidden:false});
+    if(n.collapsed) nodes.update({id:n.id,collapsed:false});
+  });
+  edges.get().forEach(e=>{ if(e.hidden) edges.update({id:e.id,hidden:false}); });
+  persistMind();
+  mmUpdatePills();
+}
+
+function mmApplyLayout(mode, silent=false){
+  if(!network || !nodes) { mmLayoutMode=mode||'free'; mmUpdatePills(); return; }
+  mmLayoutMode = mode || 'free';
+  if(mmLayoutMode==='tree'){
+    nodes.get().forEach(n=>nodes.update({id:n.id,fixed:false}));
+    network.setOptions({layout:{hierarchical:{enabled:true,direction:'UD',sortMethod:'directed',levelSeparation:150,nodeSpacing:140}},physics:{enabled:false}});
+  }else if(mmLayoutMode==='radial'){
+    network.setOptions({layout:{hierarchical:false},physics:{enabled:false}});
+    mmApplyRadialPositions(1);
+  }else{
+    nodes.get().forEach(n=>nodes.update({id:n.id,fixed:false}));
+    network.setOptions({layout:{hierarchical:false},physics:{enabled:true,barnesHut:{gravitationalConstant:-3000}}});
+  }
+  persistMind();
+  mmUpdatePills();
+  if(!silent) setTimeout(()=>mmCenterView(),150);
+}
+function mmApplyRadialPositions(rootId){
+  const visible=new Set(nodes.get().filter(n=>!n.hidden).map(n=>n.id));
+  const adj=new Map();
+  edges.get().filter(e=>!e.hidden).forEach(e=>{
+    if(!visible.has(e.from)||!visible.has(e.to)) return;
+    if(!adj.has(e.from)) adj.set(e.from,[]);
+    adj.get(e.from).push(e.to);
+  });
+  const level=new Map([[rootId,0]]);
+  const q=[rootId];
+  while(q.length){
+    const cur=q.shift();
+    (adj.get(cur)||[]).forEach(nxt=>{
+      if(!level.has(nxt)){
+        level.set(nxt,level.get(cur)+1);
+        q.push(nxt);
+      }
+    });
+  }
+  const groups={};
+  visible.forEach(id=>{
+    const lv=level.has(id)?level.get(id):99;
+    (groups[lv] ||= []).push(id);
+  });
+  const R=190;
+  Object.keys(groups).sort((a,b)=>Number(a)-Number(b)).forEach(lvStr=>{
+    const lv=Number(lvStr);
+    const ids=groups[lv];
+    const radius=lv===0?0:lv*R;
+    const cnt=ids.length;
+    ids.forEach((id,idx)=>{
+      let x=0,y=0;
+      if(lv!==0){
+        const ang=(2*Math.PI*idx)/cnt;
+        x=Math.round(Math.cos(ang)*radius);
+        y=Math.round(Math.sin(ang)*radius);
+      }
+      nodes.update({id,x,y,fixed:{x:true,y:true}});
+    });
+  });
+}
+
+function exportMind(){
+  if(!nodes || !edges) return alert('思维导图未加载');
+  const obj={nodes:nodes.get(),edges:edges.get(),meta:{defaultEdgeStyle:mmDefaultEdgeStyle,layout:mmLayoutMode}};
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='hilbert_mind.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function importMind(){
+  if(!nodes || !edges) return alert('思维导图未加载');
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const obj=JSON.parse(r.result);
+        nodes.clear(); edges.clear();
+        const meta=obj.meta||{};
+        mmDefaultEdgeStyle=meta.defaultEdgeStyle||'straight';
+        mmLayoutMode=meta.layout||'free';
+        $('#mmEdgeStyleDefault').value=mmDefaultEdgeStyle;
+        $('#mmLayoutSelect').value=mmLayoutMode;
+
+        const nlist=(obj.nodes||[]).map(n=>{
+          const t=MM_TYPES[n.type]?n.type:'concept';
+          n.type=t;
+          n.color=n.color||MM_TYPES[t].color;
+          n.font=n.font||MM_TYPES[t].font;
+          if(typeof n.collapsed==='undefined') n.collapsed=false;
+          if(typeof n.hidden==='undefined') n.hidden=false;
+          return n;
+        });
+        const elist=(obj.edges||[]).map(ed=>{
+          if(typeof ed.smooth==='undefined') ed.smooth=mmSmoothByStyle(mmDefaultEdgeStyle);
+          if(typeof ed.hidden==='undefined') ed.hidden=false;
+          return ed;
+        });
+        nodes.add(nlist.length?nlist:[mmMakeNode(1,'核心问题','concept')]);
+        edges.add(elist);
+        mmExpandAll();
+        mmApplyLayout(mmLayoutMode,true);
+        persistMind();
+        mmClearSelection();
+      }catch(err){ alert('导入失败：文件格式不正确'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+function resetMind(){
+  if(!nodes || !edges) return alert('思维导图未加载');
+  if(!confirm('确定重置思维导图？')) return;
+  nodes.clear(); edges.clear();
+  nodes.add(mmMakeNode(1,'核心问题','concept'));
+  mmDefaultEdgeStyle='straight';
+  mmLayoutMode='free';
+  $('#mmEdgeStyleDefault').value='straight';
+  $('#mmLayoutSelect').value='free';
+  mmApplyLayout('free',true);
+  mmClearSelection();
+  persistMind();
+}
+
+function mmHideCtx(){ mmCtx.style.display='none'; mmCtx.setAttribute('aria-hidden','true'); }
+function mmShowCtx(x,y,kind){
+  mmCtx.innerHTML = buildCtx(kind);
+  mmCtx.style.left=x+'px';
+  mmCtx.style.top=y+'px';
+  mmCtx.style.display='block';
+  mmCtx.setAttribute('aria-hidden','false');
+}
+function buildCtx(kind){
+  const isNode = kind==='node';
+  const isEdge = kind==='edge';
+  const n = (isNode && nodes && mmSelectedNodeId!=null) ? nodes.get(mmSelectedNodeId) : null;
+  const t = n ? n.type : null;
+
+  const item=(text,act,right='')=>`<div class="item" data-action="${act}"><span>${text}</span><span style="color:#777;font-size:0.85rem">${right}</span></div>`;
+  let html=`<div class="hint">${isNode?'节点菜单':isEdge?'连线菜单':'画布菜单'} · 右键</div>`;
+  html+=item('新增独立节点','addStandalone');
+  if(isNode){
+    html+=item('新增子节点','addChild');
+    html+=item('新增兄弟节点','addSibling');
+    html+=`<div class="sep"></div>`;
+    html+=item('编辑标签','editLabel','双击也可');
+    html+=item('删除节点','deleteNode','Del');
+    html+=item('折叠/展开子树','toggleCollapse');
+    html+=item('展开全部','expandAll');
+    html+=`<div class="sep"></div>`;
+    html+=item('开始从此节点连线','startLinkFrom');
+    html+=`<div class="sep"></div>`;
+    html+=item('类型：概念','type_concept',t==='concept'?'✓':'');
+    html+=item('类型：定理','type_theorem',t==='theorem'?'✓':'');
+    html+=item('类型：例子','type_example',t==='example'?'✓':'');
+    html+=item('类型：问题','type_question',t==='question'?'✓':'');
+    html+=item('类型：笔记','type_note',t==='note'?'✓':'');
+    html+=item('类型：警示','type_warning',t==='warning'?'✓':'');
+  }
+  if(isEdge){
+    html+=`<div class="sep"></div>`;
+    html+=item('删除连线','deleteEdge','Del');
+    html+=item('边样式→直线','edgeStraight');
+    html+=item('边样式→曲线','edgeCurved');
+  }
+  html+=`<div class="sep"></div>`;
+  html+=item('布局：自由','layout_free',mmLayoutMode==='free'?'✓':'');
+  html+=item('布局：树状','layout_tree',mmLayoutMode==='tree'?'✓':'');
+  html+=item('布局：径向','layout_radial',mmLayoutMode==='radial'?'✓':'');
+  html+=`<div class="sep"></div>`;
+  html+=item(mmLinkMode?'关闭连线模式':'开启连线模式','toggleLinkMode',mmLinkMode?'✓':'');
+  html+=item('取消选中','clearSelection');
+  html+=item('居中视图','center');
+  return html;
+}
+
+document.addEventListener('click',(e)=>{ if(mmCtx.style.display==='block' && !mmCtx.contains(e.target)) mmHideCtx(); });
+window.addEventListener('scroll',()=>{ if(mmCtx.style.display==='block') mmHideCtx(); }, {passive:true});
+window.addEventListener('resize',()=>{ if(mmCtx.style.display==='block') mmHideCtx(); });
+
+mmCtx.addEventListener('click',(e)=>{
+  const el=e.target.closest('.item'); if(!el) return;
+  const act=el.getAttribute('data-action'); if(!act) return;
+  mmHideCtx();
+
+  switch(act){
+    case 'addStandalone': return mmAddStandalone();
+    case 'addChild': return mmAddChild();
+    case 'addSibling': return mmAddSibling();
+    case 'editLabel':
+      if(!nodes) return;
+      if(mmSelectedNodeId==null) return alert('请先选中节点');
+      const n=nodes.get(mmSelectedNodeId);
+      const newLabel=prompt('编辑标签：',n?.label||'');
+      if(newLabel!=null){ nodes.update({id:mmSelectedNodeId,label:newLabel.trim()||'(未命名)'}); persistMind(); mmUpdatePills(); }
+      return;
+    case 'deleteNode': return mmDeleteSelectedNode(true);
+    case 'toggleCollapse': return mmToggleCollapseSelected();
+    case 'expandAll': return mmExpandAll();
+    case 'startLinkFrom':
+      if(!nodes) return;
+      if(mmSelectedNodeId==null) return alert('请先选中节点');
+      mmLinkMode=true; mmLinkFrom=mmSelectedNodeId; mmUpdatePills();
+      $('#mmStatus').textContent = `连线模式：已选起点 ${nodes.get(mmLinkFrom)?.label||mmLinkFrom}，请点终点`;
+      return;
+    case 'deleteEdge': return mmDeleteSelectedEdge(true);
+    case 'edgeStraight': return mmEdgeToStraight();
+    case 'edgeCurved': return mmEdgeToCurved();
+    case 'type_concept': return mmSetSelectedNodeType('concept');
+    case 'type_theorem': return mmSetSelectedNodeType('theorem');
+    case 'type_example': return mmSetSelectedNodeType('example');
+    case 'type_question': return mmSetSelectedNodeType('question');
+    case 'type_note': return mmSetSelectedNodeType('note');
+    case 'type_warning': return mmSetSelectedNodeType('warning');
+    case 'layout_free': return mmApplyLayout('free');
+    case 'layout_tree': return mmApplyLayout('tree');
+    case 'layout_radial': return mmApplyLayout('radial');
+    case 'toggleLinkMode': return mmToggleLinkMode();
+    case 'clearSelection': return mmClearSelection();
+    case 'center': return mmCenterView();
+    default: return;
+  }
+});
+
+function mmSetSelectedNodeType(type){
+  if(!nodes) return alert('思维导图未加载');
+  if(mmSelectedNodeId==null) return alert('请先选中节点');
+  const t=MM_TYPES[type]?type:'concept';
+  nodes.update({id:mmSelectedNodeId,type:t,color:MM_TYPES[t].color,font:MM_TYPES[t].font});
+  persistMind(); mmUpdatePills();
+}
+
+const aiTemplates = {
+  structure:["把以下具体问题抽象成更一般的结构：'{q}'","找出该问题的核心对象与关系：'{q}'"],
+  axiom:["针对 '{q}'，列出最小假设集合并说明其必要性。","为 '{q}' 提出一组前提条件并解释。"],
+  reconstruct:["将下面论证重构为“主线三步”：'{q}'","把下面内容拆成关键中间结论与推理链：'{q}'"]
+};
+function genPrompt(){
+  const mode = $('#aiMode').value || 'structure';
+  const sel = (window.getSelection && window.getSelection().toString()) || '';
+  const q = sel || prompt('请输入一个要训练的问题或从文章中选中文本：') || '示例：解释一个机制并给出可检验预测';
+  const pool = aiTemplates[mode] || aiTemplates.structure;
+  $('#promptBox').innerText = pool[Math.floor(Math.random()*pool.length)].replace('{q}', q);
+}
+function evalAnswer(){
+  const ans = ($('#aiAnswer')?.value || '').trim();
+  if(!ans) return alert('请先写你的回答');
+  const keywords = ['定义','前提','假设','步骤','证据','反例','结论','机制','预测','误差','边界'];
+  let kwCount = 0; keywords.forEach(k=>{ if(ans.includes(k)) kwCount++; });
+  const sentences = ans.split(/[。；;。\n]/).filter(Boolean).length;
+  let score = kwCount*8 + Math.min(20, Math.floor(ans.length/50)) + (sentences>=3?10:0);
+  score = Math.min(100, score);
+  let feedback = `本地评估分数：${score}/100（关键字检测 ${kwCount}）\n`;
+  if(ans.length<80) feedback += '建议：写得偏短，补充前提、步骤与验收方式。\n';
+  if(!/前提|假设|边界/.test(ans)) feedback += '建议：显式写出前提与适用范围。\n';
+  if(!/证据|预测|验收|检验/.test(ans)) feedback += '建议：加入可检验的证据/预测/验收准则。\n';
+  $('#aiFeedback').innerText = feedback;
+}
+function hintAI(){
+  const mode=$('#aiMode')?.value;
+  const hints={
+    structure:'提示：对象→关系→约束→输出（四元组）先写清。',
+    axiom:'提示：最小前提集合 + 每条前提用在何处。',
+    reconstruct:'提示：主线三步：核心机制 / 关键依据 / 验收方式。'
+  };
+  $('#aiFeedback').innerText = hints[mode] || '';
+}
+
+(function init(){
+  updateNetBadges();
+  migrateProjectData();
+
+  const d=new Date();
+  if($('#entryDate')) $('#entryDate').value=d.toISOString().slice(0,10);
+
+  refreshProjectSelectors();
+  renderProjectManager();
+
+  if($('#filterProject')) $('#filterProject').value='all';
+  if($('#filterType')) $('#filterType').value='all';
+
+  renderEntries();
+  renderStatsAll();
+  renderPlan();
+  showJournal();
+  updateTimerUI();
+  initMindmap();
+
+  document.querySelectorAll('.tool-section').forEach(s=>s.classList.remove('active'));
+})();
+
+window.openTool=openTool;
+
+window.addProjectFromInput=addProjectFromInput;
+window.renameProject=renameProject;
+window.deleteProject=deleteProject;
+
+window.addEntry=addEntry;
+window.renderEntries=renderEntries;
+window.startEditEntry=startEditEntry;
+window.saveEditEntry=saveEditEntry;
+window.cancelEditEntry=cancelEditEntry;
+window.deleteEntryByCreated=deleteEntryByCreated;
+
+window.startStopwatch=startStopwatch;
+window.startCountdown=startCountdown;
+window.pauseTimer=pauseTimer;
+window.resumeTimer=resumeTimer;
+window.stopAndSaveTimer=stopAndSaveTimer;
+window.resetTimer=resetTimer;
+
+window.exportAll=exportAll;
+window.importAll=importAll;
+window.clearAllData=clearAllData;
+
+window.saveJournal=saveJournal;
+window.showJournal=showJournal;
+window.clearJournalBox=clearJournalBox;
+window.deleteJournalByReverseIndex=deleteJournalByReverseIndex;
+
+window.addPlan=addPlan;
+window.togglePlanDone=togglePlanDone;
+window.writePlanToEntry=writePlanToEntry;
+window.delPlan=delPlan;
+window.renderPlan=renderPlan;
+
+window.genPrompt=genPrompt;
+window.evalAnswer=evalAnswer;
+window.hintAI=hintAI;
+
+window.exportMind=exportMind;
+window.importMind=importMind;
+window.resetMind=resetMind;
+
+window.mmApplyLabel=mmApplyLabel;
+window.mmAddStandalone=mmAddStandalone;
+window.mmAddChild=mmAddChild;
+window.mmAddSibling=mmAddSibling;
+window.mmToggleCollapseSelected=mmToggleCollapseSelected;
+window.mmExpandAll=mmExpandAll;
+window.mmSetDefaultEdgeStyle=mmSetDefaultEdgeStyle;
+window.mmApplyLayout=mmApplyLayout;
+window.mmToggleLinkMode=mmToggleLinkMode;
+window.mmEdgeToStraight=mmEdgeToStraight;
+window.mmEdgeToCurved=mmEdgeToCurved;
+window.mmDeleteSelectedEdge=mmDeleteSelectedEdge;
+window.mmDeleteSelectedNode=mmDeleteSelectedNode;
+window.mmClearSelection=mmClearSelection;
+window.mmCenterView=mmCenterView;
+</script>
+</body>
+</html>
